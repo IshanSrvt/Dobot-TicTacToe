@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic Tac Toe Robot</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <style>
+    html, body {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      height: 100%;
+      width: 100%;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-y: auto;
+    }
+
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes slideIn {
+      from { 
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to { 
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes popIn {
+      0% {
+        transform: scale(0);
+        opacity: 0;
+      }
+      80% {
+        transform: scale(1.1);
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-5deg); }
+      75% { transform: rotate(5deg); }
+    }
+
+    .game-wrapper {
+      width: 100%;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 32px 48px 32px;
+      gap: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background-size: 200% 200%;
+      animation: gradientShift 8s ease infinite;
+    }
+
+    .game-title {
+      font-size: 36px;
+      font-weight: bold;
+      margin: 0;
+      animation: slideIn 0.6s ease, pulse 2s ease-in-out infinite;
+      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .status-message {
+      font-size: 20px;
+      font-weight: 500;
+      min-height: 28px;
+      text-align: center;
+      animation: slideIn 0.8s ease;
+      padding: 12px 24px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    .color-selection {
+      display: flex;
+      gap: 16px;
+      margin: 8px 0;
+      animation: slideIn 1s ease;
+    }
+
+    .color-button {
+      padding: 12px 32px;
+      font-size: 18px;
+      font-weight: 600;
+      border: 3px solid transparent;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .color-button::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .color-button:hover:not(:disabled)::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .color-button:hover:not(:disabled) {
+      transform: translateY(-4px) scale(1.08);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      animation: wiggle 0.5s ease;
+    }
+
+    .color-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .color-button.selected {
+      border-color: #fff;
+      transform: scale(1.05);
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      max-width: 380px;
+      width: 100%;
+      margin: 8px 0;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      animation: slideIn 1.2s ease;
+    }
+
+    .cell-button {
+      aspect-ratio: 1;
+      font-size: 48px;
+      font-weight: bold;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cell-button::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.4);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .cell-button:hover:not(:disabled)::after {
+      width: 200px;
+      height: 200px;
+    }
+
+    .cell-button:hover:not(:disabled) {
+      transform: scale(1.1) rotate(2deg);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .cell-button:active:not(:disabled) {
+      transform: scale(0.95);
+    }
+
+    .cell-button:disabled {
+      cursor: not-allowed;
+    }
+
+    .cell-button.placed {
+      animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    .reset-button {
+      padding: 14px 56px;
+      font-size: 18px;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      margin-top: 8px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      animation: slideIn 0.6s ease, bounce 1.5s ease-in-out infinite;
+    }
+
+    .reset-button:hover {
+      transform: translateY(-4px) scale(1.05);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .reset-button:active {
+      transform: translateY(-2px) scale(1.02);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .winner-cell {
+      animation: pulse 0.8s ease-in-out infinite, rotate 0.6s ease;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body>
+  <div class="game-wrapper">
+   <h1 class="game-title">Tic Tac Toe Robot</h1>
+   <div class="status-message" id="statusMessage">
+    Choose your color to start!
+   </div>
+   <div class="color-selection" id="colorSelection"><button class="color-button" id="blueButton" data-color="blue">🔵 Blue (You)</button> <button class="color-button" id="redButton" data-color="red">🔴 Red (Robot)</button>
+   </div>
+   <div class="game-board" id="gameBoard"><button class="cell-button" data-cell="0" disabled></button> <button class="cell-button" data-cell="1" disabled></button> <button class="cell-button" data-cell="2" disabled></button> <button class="cell-button" data-cell="3" disabled></button> <button class="cell-button" data-cell="4" disabled></button> <button class="cell-button" data-cell="5" disabled></button> <button class="cell-button" data-cell="6" disabled></button> <button class="cell-button" data-cell="7" disabled></button> <button class="cell-button" data-cell="8" disabled></button>
+   </div><button class="reset-button" id="resetButton">Reset Game</button>
+  </div>
+  <script>
+    // Initialize Socket.IO connection
+    const socket = io('http://localhost:5000');
+
+    const defaultConfig = {
+      background_color: "#f0f4f8",
+      board_color: "#ffffff",
+      blue_color: "#3b82f6",
+      red_color: "#ef4444",
+      text_color: "#1e293b",
+      game_title: "Tic Tac Toe Robot",
+      status_message: "Choose your color to start!",
+      blue_label: "Blue (You)",
+      red_label: "Red (Robot)",
+      font_family: "Segoe UI",
+      font_size: 16
+    };
+
+    // WebSocket event handlers
+    socket.on('connect', function() {
+      console.log('Connected to server');
+    });
+
+    socket.on('human_move_detected', function(data) {
+      console.log('Vision detected move:', data);
+      // Update GUI to show the detected move
+      makeMove(data.position);
+    });
+
+    socket.on('robot_move_complete', function(data) {
+      console.log('Robot move complete:', data);
+      // Update GUI to show robot's move
+      makeMove(data.position);
+    });
+
+    let gameState = {
+      board: Array(9).fill(null),
+      humanColor: null,
+      robotColor: null,
+      currentPlayer: 'blue',
+      gameActive: false,
+      gameOver: false
+    };
+
+    async function onConfigChange(config) {
+      const backgroundColor = config.background_color || defaultConfig.background_color;
+      const boardColor = config.board_color || defaultConfig.board_color;
+      const blueColor = config.blue_color || defaultConfig.blue_color;
+      const redColor = config.red_color || defaultConfig.red_color;
+      const textColor = config.text_color || defaultConfig.text_color;
+      const gameTitle = config.game_title || defaultConfig.game_title;
+      const statusMessage = config.status_message || defaultConfig.status_message;
+      const blueLabel = config.blue_label || defaultConfig.blue_label;
+      const redLabel = config.red_label || defaultConfig.red_label;
+      const customFont = config.font_family || defaultConfig.font_family;
+      const baseSize = config.font_size || defaultConfig.font_size;
+
+      const baseFontStack = 'Tahoma, Geneva, Verdana, sans-serif';
+      document.body.style.fontFamily = `${customFont}, ${baseFontStack}`;
+      
+      document.querySelector('.game-wrapper').style.backgroundColor = backgroundColor;
+      document.querySelector('.game-title').style.color = textColor;
+      document.querySelector('.game-title').textContent = gameTitle;
+      document.querySelector('.game-title').style.fontSize = `${baseSize * 2.25}px`;
+      
+      document.querySelector('.status-message').style.color = textColor;
+      document.querySelector('.status-message').style.fontSize = `${baseSize * 1.25}px`;
+      if (!gameState.gameActive && !gameState.gameOver) {
+        document.getElementById('statusMessage').textContent = statusMessage;
+      }
+
+      const blueButton = document.getElementById('blueButton');
+      const redButton = document.getElementById('redButton');
+      
+      blueButton.style.backgroundColor = blueColor;
+      blueButton.style.color = '#ffffff';
+      blueButton.textContent = `🔵 ${blueLabel}`;
+      blueButton.style.fontSize = `${baseSize * 1.125}px`;
+      
+      redButton.style.backgroundColor = redColor;
+      redButton.style.color = '#ffffff';
+      redButton.textContent = `🔴 ${redLabel}`;
+      redButton.style.fontSize = `${baseSize * 1.125}px`;
+
+      document.querySelectorAll('.cell-button').forEach(cell => {
+        cell.style.backgroundColor = boardColor;
+        cell.style.fontSize = `${baseSize * 3}px`;
+        const cellValue = gameState.board[parseInt(cell.dataset.cell)];
+        if (cellValue === 'blue') {
+          cell.style.color = blueColor;
+        } else if (cellValue === 'red') {
+          cell.style.color = redColor;
+        }
+      });
+
+      const resetButton = document.getElementById('resetButton');
+      resetButton.style.backgroundColor = textColor;
+      resetButton.style.color = backgroundColor;
+      resetButton.style.fontSize = `${baseSize * 1.125}px`;
+    }
+
+    function updateStatus(message) {
+      document.getElementById('statusMessage').textContent = message;
+    }
+
+    function checkWinner() {
+      const winPatterns = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],
+        [0, 4, 8], [2, 4, 6]
+      ];
+
+      for (const pattern of winPatterns) {
+        const [a, b, c] = pattern;
+        if (gameState.board[a] && 
+            gameState.board[a] === gameState.board[b] && 
+            gameState.board[a] === gameState.board[c]) {
+          return gameState.board[a];
+        }
+      }
+
+      if (gameState.board.every(cell => cell !== null)) {
+        return 'tie';
+      }
+
+      return null;
+    }
+
+    function makeMove(cellIndex) {
+      if (gameState.board[cellIndex] || gameState.gameOver) {
+        return false;
+      }
+
+      gameState.board[cellIndex] = gameState.currentPlayer;
+      const cell = document.querySelector(`[data-cell="${cellIndex}"]`);
+      cell.classList.add('placed');
+      cell.textContent = gameState.currentPlayer === 'blue' ? '●' : '●';
+      const config = window.elementSdk?.config || defaultConfig;
+      cell.style.color = gameState.currentPlayer === 'blue' ? 
+        (config.blue_color || defaultConfig.blue_color) : 
+        (config.red_color || defaultConfig.red_color);
+      cell.disabled = true;
+
+      const winner = checkWinner();
+      if (winner) {
+        gameState.gameOver = true;
+        document.querySelectorAll('.cell-button').forEach(btn => btn.disabled = true);
+        
+        if (winner === 'tie') {
+          updateStatus("It's a tie! 🤝");
+        } else if (winner === gameState.humanColor) {
+          updateStatus("You win! 🎉");
+        } else {
+          updateStatus("Robot wins! 🤖");
+        }
+        return true;
+      }
+
+      gameState.currentPlayer = gameState.currentPlayer === 'blue' ? 'red' : 'blue';
+      
+      if (gameState.currentPlayer === gameState.humanColor) {
+        updateStatus("Your turn!");
+      } else {
+        updateStatus("Robot's turn...");
+      }
+
+      return false;
+    }
+
+    function handleCellClick(event) {
+      const cellIndex = parseInt(event.target.dataset.cell);
+      
+      if (gameState.currentPlayer !== gameState.humanColor) {
+        return;
+      }
+
+      const gameEnded = makeMove(cellIndex);
+      
+      if (!gameEnded && gameState.currentPlayer === gameState.robotColor) {
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('robotTurn'));
+        }, 500);
+      }
+    }
+
+    function startGame(humanColor) {
+      // Send start game request to backend
+      console.log('Starting game with color:', humanColor);
+
+      fetch('http://localhost:5000/api/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          human_color: humanColor,
+          use_vision: true  // Enable vision by default
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Server response:', data);
+
+        if (data.success) {
+          gameState.humanColor = data.human_color;
+          gameState.robotColor = data.robot_color;
+          gameState.currentPlayer = 'blue';
+          gameState.gameActive = true;
+          gameState.gameOver = false;
+
+          document.getElementById('colorSelection').classList.add('hidden');
+          document.querySelectorAll('.cell-button').forEach(cell => {
+            cell.disabled = false;
+            cell.addEventListener('click', handleCellClick);
+          });
+
+          if (gameState.robotColor === 'blue') {
+            updateStatus("Robot goes first...");
+          } else {
+            updateStatus("Your turn! Blue goes first.");
+          }
+        } else {
+          updateStatus('Error: ' + (data.error || 'Failed to start game'));
+        }
+      })
+      .catch(error => {
+        console.error('Error starting game:', error);
+        updateStatus('Error communicating with server');
+      });
+    }
+
+    function resetGame() {
+      console.log('Resetting game...');
+
+      // Call server to reset
+      fetch('http://localhost:5000/api/reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Reset response:', data);
+
+        gameState.board = Array(9).fill(null);
+        gameState.humanColor = null;
+        gameState.robotColor = null;
+        gameState.currentPlayer = 'blue';
+        gameState.gameActive = false;
+        gameState.gameOver = false;
+
+        document.querySelectorAll('.cell-button').forEach(cell => {
+          cell.textContent = '';
+          cell.disabled = true;
+          cell.classList.remove('placed');
+          cell.removeEventListener('click', handleCellClick);
+        });
+
+        document.getElementById('colorSelection').classList.remove('hidden');
+
+        const config = window.elementSdk?.config || defaultConfig;
+        updateStatus(config.status_message || defaultConfig.status_message);
+
+        document.getElementById('blueButton').classList.remove('selected');
+        document.getElementById('redButton').classList.remove('selected');
+      })
+      .catch(error => {
+        console.error('Error resetting game:', error);
+      });
+    }
+
+    document.getElementById('blueButton').addEventListener('click', () => {
+      document.getElementById('blueButton').classList.add('selected');
+      startGame('blue');
+    });
+
+    document.getElementById('redButton').addEventListener('click', () => {
+      document.getElementById('redButton').classList.add('selected');
+      startGame('red');
+    });
+
+    document.getElementById('resetButton').addEventListener('click', resetGame);
+
+    window.addEventListener('makeMove', (event) => {
+      if (gameState.gameOver) return;
+      makeMove(event.detail.cellIndex);
+    });
+
+    window.addEventListener('getGameState', (event) => {
+      window.dispatchEvent(new CustomEvent('gameStateResponse', {
+        detail: {
+          board: [...gameState.board],
+          currentPlayer: gameState.currentPlayer,
+          humanColor: gameState.humanColor,
+          robotColor: gameState.robotColor,
+          gameOver: gameState.gameOver
+        }
+      }));
+    });
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities: (config) => ({
+          recolorables: [
+            {
+              get: () => config.background_color || defaultConfig.background_color,
+              set: (value) => {
+                config.background_color = value;
+                window.elementSdk.setConfig({ background_color: value });
+              }
+            },
+            {
+              get: () => config.board_color || defaultConfig.board_color,
+              set: (value) => {
+                config.board_color = value;
+                window.elementSdk.setConfig({ board_color: value });
+              }
+            },
+            {
+              get: () => config.blue_color || defaultConfig.blue_color,
+              set: (value) => {
+                config.blue_color = value;
+                window.elementSdk.setConfig({ blue_color: value });
+              }
+            },
+            {
+              get: () => config.red_color || defaultConfig.red_color,
+              set: (value) => {
+                config.red_color = value;
+                window.elementSdk.setConfig({ red_color: value });
+              }
+            },
+            {
+              get: () => config.text_color || defaultConfig.text_color,
+              set: (value) => {
+                config.text_color = value;
+                window.elementSdk.setConfig({ text_color: value });
+              }
+            }
+          ],
+          borderables: [],
+          fontEditable: {
+            get: () => config.font_family || defaultConfig.font_family,
+            set: (value) => {
+              config.font_family = value;
+              window.elementSdk.setConfig({ font_family: value });
+            }
+          },
+          fontSizeable: {
+            get: () => config.font_size || defaultConfig.font_size,
+            set: (value) => {
+              config.font_size = value;
+              window.elementSdk.setConfig({ font_size: value });
+            }
+          }
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ["game_title", config.game_title || defaultConfig.game_title],
+          ["status_message", config.status_message || defaultConfig.status_message],
+          ["blue_label", config.blue_label || defaultConfig.blue_label],
+          ["red_label", config.red_label || defaultConfig.red_label]
+        ])
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      onConfigChange(window.elementSdk?.config || defaultConfig);
+    });
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a8dad2ab4381937',t:'MTc2NDg3NjE4Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
