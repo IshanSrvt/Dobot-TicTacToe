@@ -1,4 +1,4 @@
-#Final Dobot Lab Report: Tic Tac Toe with the Dobot Magician Lite
+# Final Dobot Lab Report: Tic Tac Toe with the Dobot Magician Lite
 Student: Ishan Srivastava
 Class: RAS 101
 Team Members: Aadi Kadam, Nick Nekrasov
@@ -25,11 +25,11 @@ Team Members: Aadi Kadam, Nick Nekrasov
 
 
 
-##Introduction and Game Style
+## Introduction and Game Style
 For this project we built a Tic Tac Toe system where the Dobot Magician Lite plays the game by placing colored blocks. The robot uses red blocks and the human plays with blue blocks. The human always plays first.
 We used a second Dobot only to hold the camera steady. This camera allowed us to detect the board state after each move. The main robot then picked up red blocks using the suction cup and placed them on the board based on the game logic.
 
-##Finding the Coordinates
+## Finding the Coordinates
 To make the robot place blocks accurately, we first needed the coordinates for all nine squares.
 we did this by:
 Opening DobotLab
@@ -76,6 +76,6 @@ Getting the block placement centered in every square
 Syncing the robot movement with the web interface and vision data
 Through these steps I learned how different parts of a robotics system must work together. I also learned how to debug movement issues and how vision and logic can guide the robot in real time.
 
-##Conclusion
+## Conclusion
 The final system plays a full Tic Tac Toe game from start to finish. The human makes a move, the camera detects it and the robot responds with the best possible move. The robot always chooses the perfect red block move through the minimax algorithm.
 This project brought together motion control vision and artificial intelligence and helped me understand robotics in a very practical way.
