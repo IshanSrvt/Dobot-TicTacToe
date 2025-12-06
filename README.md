@@ -1,81 +1,89 @@
-# Final Dobot Lab Report: Tic Tac Toe with the Dobot Magician Lite
-Student: Ishan Srivastava
-Class: RAS 101
-Team Members: Aadi Kadam, Nick Nekrasov
- 
+# Tic Tac Toe with the Dobot Magician Lite  
+Team Members: Nick Nekrasov, Aadi Kadam
+Course: RAS 101  
+Project: Final Dobot Lab – Tic Tac Toe
 
+## 1. Introduction
 
+This project is a fully working Tic Tac Toe game where the Dobot Magician Lite plays against a human. The robot places red blocks using the suction cup, while the human plays with blue blocks. The human always plays first.
 
+A second Dobot was used as a stable camera stand so that the camera could capture the board clearly. The camera feeds were processed to detect the human move, and then the robot responded with the best possible move.
 
+The entire system is built in Python and uses a web based interface for interaction.
 
+## 2. Coordinate Calibration
 
+To place blocks accurately, all nine board positions were measured inside DobotLab.  
+For each square:
 
+- The end effector was moved to the center
+- The X, Y and Z coordinates were recorded
+- A safe hover height was set for travel movements
+- A pickup location for red blocks was also recorded
 
+These coordinates were stored in a calibration file so the game logic could use them directly.
 
+## 3. Vision System
 
+A camera mounted on the second Dobot captured images of the board during the game.  
+The program divided the board into nine regions and identified:
 
+- Red blocks (robot moves)
+- Blue blocks (human moves)
+- Empty tiles
 
+The vision system updated the board state in real time and allowed the robot to understand where the human placed their block.
 
+## 4. Game Logic
 
+To decide its move, the robot used the minimax algorithm. This gives the robot a perfect strategy and ensures it cannot lose.
 
+The turn cycle was:
 
+1. Human places a blue block  
+2. The camera detects the updated board  
+3. The robot computes the best move  
+4. The robot picks up a red block and places it on the chosen square  
 
+This produced a complete and smooth game experience.
 
+## 5. Robot Movements
 
+The robot followed a simple set of steps for each move:
 
+- Move to a safe hover point  
+- Drop down and pick up a red block  
+- Turn suction on  
+- Move to the chosen board position  
+- Lower and place the block  
+- Turn suction off  
+- Return to a safe position  
 
+These movements were handled by Python functions inside the control scripts.
 
-## Introduction and Game Style
-For this project we built a Tic Tac Toe system where the Dobot Magician Lite plays the game by placing colored blocks. The robot uses red blocks and the human plays with blue blocks. The human always plays first.
-We used a second Dobot only to hold the camera steady. This camera allowed us to detect the board state after each move. The main robot then picked up red blocks using the suction cup and placed them on the board based on the game logic.
+## 6. Web Interface
 
-## Finding the Coordinates
-To make the robot place blocks accurately, we first needed the coordinates for all nine squares.
-we did this by:
-Opening DobotLab
-Moving the end effector to the center of each square
-Recording the X Y and Z values
-Saving a safe hover height for travel
-Saving the pickup point for red blocks
-These values were stored in a calibration file so the code could load them each time. This helped the robot reach the exact spot for every move.
-Camera System and Board Detection
-The camera was mounted on the second Dobot which acted like a tripod. We calibrated the camera by taking an image of the empty board and dividing it into nine regions.
-The vision program then checked:
-If a region had a red block
-If a region had a blue block
-Or if it was empty
-This allowed the robot to understand the board before making its turn. The vision system ran in the background and updated the board in real time.
-Game Logic and Robot Decisions
-The robot used the minimax algorithm to decide its moves. This method checks all possible future moves and chooses the best one. Because of this the robot cannot lose.
-Each turn followed a simple cycle:
-The human places a blue block.
-The camera updates the board.
-The minimax algorithm finds the best red block move.
-The robot picks up a red block and places it in the correct square.
-This created a smooth and complete game flow.
-Robot Movements
-The movement steps of the robot were:
-Move to a safe hover point
-Go down to pick up a red block
-Turn suction on
-Move to the target board square
-Lower and place the block
-Turn suction off
-Return to a safe height
-All these steps were controlled by Python functions in the main server file.
-Web Interface
-We made a simple web interface using Flask and SocketIO. It showed:
-The Tic Tac Toe board
-Whose turn it is
-The final result of the game
-This made the system easy to use and gave a clear visual display during gameplay.
-Challenges and Learning
-Some challenges we faced were:
-Calibrating the camera for consistent color detection
-Getting the block placement centered in every square
-Syncing the robot movement with the web interface and vision data
-Through these steps I learned how different parts of a robotics system must work together. I also learned how to debug movement issues and how vision and logic can guide the robot in real time.
+A lightweight web interface was created using Flask and SocketIO. It displayed:
 
-## Conclusion
-The final system plays a full Tic Tac Toe game from start to finish. The human makes a move, the camera detects it and the robot responds with the best possible move. The robot always chooses the perfect red block move through the minimax algorithm.
-This project brought together motion control vision and artificial intelligence and helped me understand robotics in a very practical way.
+- The current board  
+- Whose turn it was  
+- The final game result  
+
+This made the game very clear and easy to play.
+
+## 7. Challenges and Learning
+
+Some challenges in the project were:
+
+- Calibrating the camera for accurate color detection
+- Making sure the block is placed in the center each time
+- Syncing the camera system with the robot movements and game logic
+
+Through this project I learned how different parts of a robotics system work together. It helped me understand how vision, movement, and decision making can be combined to create a real interactive experience.
+
+## 8. Conclusion
+
+The final system plays a full Tic Tac Toe match from start to finish. The human makes a move, the camera detects it, and the robot responds with the best possible move. The robot uses a perfect strategy through the minimax algorithm, which makes the experience feel complete and intelligent.
+
+This project brought together vision processing, robot motion, and artificial intelligence in a practical and meaningful way.
+
