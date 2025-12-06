@@ -1,7 +1,7 @@
 # Tic Tac Toe with the Dobot Magician Lite  
-Team Members: Nick Nekrasov, Aadi Kadam
-Course: RAS 101  
-Project: Final Dobot Lab – Tic Tac Toe
+- Team Members: Nick Nekrasov, Aadi Kadam
+- Course: RAS 101  
+- Project: Final Dobot Lab – Tic Tac Toe
 
 ## 1. Introduction
 
